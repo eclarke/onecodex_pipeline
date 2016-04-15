@@ -1,1 +1,4 @@
 ONE_CODEX_API_KEY
+data_files
+*.sqlite
+onecodex-venv
