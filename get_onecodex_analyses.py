@@ -1,9 +1,9 @@
 import os
 import sys
 import time
-import logging
 import itertools
 import functools
+import argparse
 import csv
 
 from urllib.error import HTTPError
@@ -13,10 +13,6 @@ import requests
 from Bio import Entrez
 
 Entrez.email = "ecl@mail.med.upenn.edu"
-
-logging.basicConfig(filename="onecodex.log", level=logging.DEBUG, filemode='w')
-stdout_logger = logging.StreamHandler(sys.stdout)
-stdout_logger.setLevel(logging.INFO)
 
 API_KEY = open("ONE_CODEX_API_KEY").read().strip()
 OCX_API = "https://app.onecodex.com/api/v0/"
@@ -54,6 +50,7 @@ def get_analyses(api_key=API_KEY):
 
 
 def get_analyses_for_id(sample_id, api_key=API_KEY):
+    """List the analyses for a sample id."""
     analyses = get_analyses(api_key)
     analysis_ids = [_['id'] for _ in analyses if _['sample_id'] == sample_id]
     for a_id in analysis_ids:
@@ -62,12 +59,14 @@ def get_analyses_for_id(sample_id, api_key=API_KEY):
 
 
 def get_analyses_for_sample(sample_name, api_key=API_KEY):
+    """List the analyses for a sample."""
     samples = get_samples(api_key)
     sample_id = samples[sample_name]
     return get_analyses_for_id(sample_id, api_key)
 
 
 def get_raw_ocx_analysis_for_sample(sample_name, out_fp, api_key=API_KEY):
+    """Download the raw analysis file for a sample."""
     analyses = get_analyses_for_sample(sample_name, api_key)
     for analysis in analyses:
         if analysis['reference_name'] == 'One Codex Database':
@@ -84,6 +83,7 @@ def get_raw_ocx_analysis_for_sample(sample_name, out_fp, api_key=API_KEY):
 
         
 def get_ocx_analysis_for_sample(sample_name, api_key=API_KEY):
+    """Get the table-form results for a sample (warning: can be large)."""
     analyses = get_analyses_for_sample(sample_name, api_key)
     for analysis in analyses:
         if analysis['reference_name'] == 'One Codex Database':
@@ -93,6 +93,7 @@ def get_ocx_analysis_for_sample(sample_name, api_key=API_KEY):
 
         
 def get_taxa_in_sample(sample_name, out_fp, api_key=API_KEY):
+    """Write table with reads and full tax. info for a sample."""
     taxa = get_ocx_analysis_for_sample(sample_name, api_key)
     tax_ids = [_['tax_id'] for _ in taxa]
     # Post list to NCBI
@@ -138,16 +139,21 @@ def _ncbi_get_many_taxa(ids, batch_size=5000):
                     raise
         yield(Entrez.read(handle))
     
-        
+
+def main():
+    parser = argparse.ArgumentParser("Download and clean up analyses from OneCodex.")
+
+    parser.add_argument(
+        'files', nargs='+',
+        help='Files to which to download corresponding analyses.')
+    parser.add_argument(
+        '--output_fp', help='Folder to write analysis tables.')
+    parser.add_argument(
+        '--api_key', help='One Codex API key (by default, read from $ONE_CODEX_API_KEY)',
+        default=os.environ.get("ONE_CODEX_API_KEY"))
+
+    args = parser.parse_args()
+
     
 if __name__ == "__main__":
-    log = logging.getLogger(__name__)
-    outlog = logging.StreamHandler(sys.stdout)
-    outlog.setLevel(logging.INFO)
-    log.addHandler(outlog)
-    log.setLevel(logging.INFO)
-
-    import pprint
-    pprint.pprint(get_analyses(API_KEY))
-
-    get_ocx_analysis_for_sample("PCMP_SCID00003.ST.3.2_Genomiphi_assembled.fastq", 'ocx')
+    main()
