@@ -12,7 +12,7 @@ from enum import Enum
 import requests
 from Bio import Entrez
 
-Entrez.email = "ecl@mail.med.upenn.edu"
+Entrez.email = "<REPLACE_ME>"
 
 OCX_API = "https://app.onecodex.com/api/v0/"
 
@@ -136,50 +136,3 @@ def _ncbi_get_many_taxa(ids, batch_size=5000):
                 else:
                     raise
         yield(Entrez.read(handle))
-    
-
-def main():
-    parser = argparse.ArgumentParser("Download and clean up analyses from OneCodex.")
-
-    parser.add_argument(
-        'files', nargs='+',
-        help='Files to which to download corresponding analyses.')
-    parser.add_argument(
-        '--output_fp', help='Folder to write analysis tables. (default: %(default))',
-        default='one_codex')
-    parser.add_argument(
-        '--api_key', help='One Codex API key (by default, read from $ONE_CODEX_API_KEY)',
-        default=os.environ.get("ONE_CODEX_API_KEY"))
-    parser.add_argument(
-        '--verbose', help='Print lots of stuff', action='store_true')
-
-    args = parser.parse_args()
-
-    if not os.path.exists(args.output_fp):
-        os.mkdir(args.output_fp)
-
-    # Set up logging
-    import logging
-    log = logging.getLogger("ocx_analyses")
-    log.setLevel(logging.DEBUG)
-
-    log_format = logging.Formatter("%(asctime)s %(levelname)s: %(message)s")
-
-    stream_log = logging.StreamHandler()
-    if args.verbose:
-        stream_log.setLevel(logging.DEBUG)
-    else:
-        stream_log.setLevel(logging.INFO)
-    stream_log.setFormatter(log_format)
-    log.addHandler(stream_log)
-    
-    file_log = logging.FileHandler(args.output_fp + "/log.txt", 'w')
-    file_log.setLevel(logging.DEBUG)
-    file_log.setFormatter(log_format)
-    log.addHandler(file_log)
-
-    log.info(vars(args))
-
-    
-if __name__ == "__main__":
-    main()
