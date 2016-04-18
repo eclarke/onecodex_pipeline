@@ -1,5 +1,8 @@
 from pprint import pprint
 import glob
+
+from snakemake.utils import R
+
 import onecodex_api as ocx
 
 configfile: "snakemake_config.yaml"
@@ -32,4 +35,11 @@ rule get_taxa:
     run:
         ocx.get_taxa_in_sample(os.path.basename(input[0]), config['output_fp'], config['api_key'])
 
-
+rule merge_sample_taxa:
+    input:
+        all_targets
+    output:
+        all_samples = config['output_fp'] + "all_samples.tsv",
+        all_taxa = config['output_fp'] + "all_taxa.tsv"
+    script:
+        "aggregate_samples.R"
