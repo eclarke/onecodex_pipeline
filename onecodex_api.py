@@ -1,9 +1,9 @@
 import os
 import sys
 import time
+import pprint
 import itertools
 import functools
-import argparse
 import csv
 
 from urllib.error import HTTPError
@@ -14,7 +14,6 @@ from Bio import Entrez
 
 Entrez.email = "ecl@mail.med.upenn.edu"
 
-API_KEY = open("ONE_CODEX_API_KEY").read().strip()
 OCX_API = "https://app.onecodex.com/api/v0/"
 
 TaxRanks = [
@@ -35,7 +34,7 @@ def _get_ocx_url(url, api_key):
 
 
 @functools.lru_cache()
-def get_samples(api_key=API_KEY):
+def get_samples(api_key):
     """List samples on One Codex."""
     url = OCX_API + "samples"
     r = _get_ocx_url(url, api_key)
@@ -43,13 +42,13 @@ def get_samples(api_key=API_KEY):
 
 
 @functools.lru_cache()
-def get_analyses(api_key=API_KEY):
+def get_analyses(api_key):
     """List completed analyses on One Codex."""
     url = OCX_API + "analyses"
     return _get_ocx_url(url, api_key).json()
 
 
-def get_analyses_for_id(sample_id, api_key=API_KEY):
+def get_analyses_for_id(sample_id, api_key):
     """List the analyses for a sample id."""
     analyses = get_analyses(api_key)
     analysis_ids = [_['id'] for _ in analyses if _['sample_id'] == sample_id]
@@ -58,14 +57,14 @@ def get_analyses_for_id(sample_id, api_key=API_KEY):
         yield _get_ocx_url(url, api_key).json()
 
 
-def get_analyses_for_sample(sample_name, api_key=API_KEY):
+def get_analyses_for_sample(sample_name, api_key):
     """List the analyses for a sample."""
     samples = get_samples(api_key)
     sample_id = samples[sample_name]
     return get_analyses_for_id(sample_id, api_key)
 
 
-def get_raw_ocx_analysis_for_sample(sample_name, out_fp, api_key=API_KEY):
+def get_raw_ocx_analysis_for_sample(sample_name, out_fp, api_key):
     """Download the raw analysis file for a sample."""
     analyses = get_analyses_for_sample(sample_name, api_key)
     for analysis in analyses:
@@ -82,7 +81,7 @@ def get_raw_ocx_analysis_for_sample(sample_name, out_fp, api_key=API_KEY):
             return out_filename
 
         
-def get_ocx_analysis_for_sample(sample_name, api_key=API_KEY):
+def get_ocx_analysis_for_sample(sample_name, api_key):
     """Get the table-form results for a sample (warning: can be large)."""
     analyses = get_analyses_for_sample(sample_name, api_key)
     for analysis in analyses:
@@ -92,7 +91,7 @@ def get_ocx_analysis_for_sample(sample_name, api_key=API_KEY):
             return table
 
         
-def get_taxa_in_sample(sample_name, out_fp, api_key=API_KEY):
+def get_taxa_in_sample(sample_name, out_fp, api_key):
     """Write table with reads and full tax. info for a sample."""
     taxa = get_ocx_analysis_for_sample(sample_name, api_key)
     tax_ids = [_['tax_id'] for _ in taxa]
@@ -147,12 +146,40 @@ def main():
         'files', nargs='+',
         help='Files to which to download corresponding analyses.')
     parser.add_argument(
-        '--output_fp', help='Folder to write analysis tables.')
+        '--output_fp', help='Folder to write analysis tables. (default: %(default))',
+        default='one_codex')
     parser.add_argument(
         '--api_key', help='One Codex API key (by default, read from $ONE_CODEX_API_KEY)',
         default=os.environ.get("ONE_CODEX_API_KEY"))
+    parser.add_argument(
+        '--verbose', help='Print lots of stuff', action='store_true')
 
     args = parser.parse_args()
+
+    if not os.path.exists(args.output_fp):
+        os.mkdir(args.output_fp)
+
+    # Set up logging
+    import logging
+    log = logging.getLogger("ocx_analyses")
+    log.setLevel(logging.DEBUG)
+
+    log_format = logging.Formatter("%(asctime)s %(levelname)s: %(message)s")
+
+    stream_log = logging.StreamHandler()
+    if args.verbose:
+        stream_log.setLevel(logging.DEBUG)
+    else:
+        stream_log.setLevel(logging.INFO)
+    stream_log.setFormatter(log_format)
+    log.addHandler(stream_log)
+    
+    file_log = logging.FileHandler(args.output_fp + "/log.txt", 'w')
+    file_log.setLevel(logging.DEBUG)
+    file_log.setFormatter(log_format)
+    log.addHandler(file_log)
+
+    log.info(vars(args))
 
     
 if __name__ == "__main__":
