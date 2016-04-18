@@ -27,7 +27,6 @@ TaxRanks = [
 ] 
 
 def _get_ocx_url(url, api_key):
-    logging.debug(url)
     r = requests.get(url, auth=(api_key, ''))
     r.raise_for_status()
     return r
@@ -73,9 +72,9 @@ def get_raw_ocx_analysis_for_sample(sample_name, out_fp, api_key):
             out = _get_ocx_url(url, api_key)
             out_filename = os.path.join(out_fp, sample_name + ".ocx.raw.tsv.gz")
             with open(out_filename, 'wb') as outfile:
-                logging.info("Downloading OCX analysis for {} to {}".format(
-                    sample_name,
-                    out_filename))
+                # logging.info("Downloading OCX analysis for {} to {}".format(
+                #     sample_name,
+                #     out_filename))
                 for chunk in out.iter_content(1024):
                     outfile.write(chunk)
             return out_filename

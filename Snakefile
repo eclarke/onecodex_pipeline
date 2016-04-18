@@ -16,7 +16,7 @@ update_config(config_default, config)
 config = config_default
 
 all_targets = [
-    config['output_fp'] + os.path.basename(s).strip(".fastq") + ".ocx.tsv"
+    config['output_fp'] + os.path.basename(s) + ".taxa.tsv"
     for s in config['samples']
 ]
 
@@ -26,10 +26,10 @@ rule all:
 
 rule get_taxa:
     input:
-        config['data_fp'] + "{sample}.fastq"
+        config['data_fp'] + "{sample}",
     output:
-        config['output_fp'] + "{sample}.ocx.tsv"
+        config['output_fp'] + "{sample}.taxa.tsv"
     run:
-        ocx.get_taxa_in_sample(input.sample, config['output_fp'], config['api_key'])
+        ocx.get_taxa_in_sample(os.path.basename(input[0]), config['output_fp'], config['api_key'])
 
 
