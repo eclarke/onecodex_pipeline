@@ -13,3 +13,4 @@ snakemake_config.yaml
 # R stuff
 *.Rproj
 .Rproj.user
+/Readme.html
