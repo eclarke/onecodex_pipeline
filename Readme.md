@@ -21,3 +21,4 @@ expands the taxonomy of all the taxa from NCBI and writes summaries.
 ```sh
 $ snakemake
 ```
+

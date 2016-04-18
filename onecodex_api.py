@@ -96,8 +96,10 @@ def get_taxa_in_sample(sample_name, out_fp, api_key):
     tax_ids = [_['tax_id'] for _ in taxa]
     # Post list to NCBI
     tax_info = list(itertools.chain.from_iterable(_ncbi_get_many_taxa(tax_ids)))
-    tax_info = [{r['Rank']: r['ScientificName'] for r in t.get('LineageEx', ())} for t in tax_info]
-    print(len(tax_info), len(taxa))
+    tax_info = [
+        {r['Rank']: r['ScientificName'] for r in t.get('LineageEx', ())}
+        for t in tax_info
+    ]
     assert(len(tax_info) == len(taxa))
     out_filename = os.path.join(out_fp, sample_name + ".taxa.tsv")
     with open(out_filename, 'w') as out:
