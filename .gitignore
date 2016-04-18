@@ -1,4 +1,11 @@
-ONE_CODEX_API_KEY
+# Data directories
 data_files
-*.sqlite
+
+# Virtual environments
 onecodex-venv
+py3
+
+# Snakemake stuff
+.snakemake
+__pycache__
+snakemake_config.yaml
