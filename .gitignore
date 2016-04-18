@@ -9,4 +9,7 @@ py3
 .snakemake
 __pycache__
 snakemake_config.yaml
+
+# R stuff
+*.Rproj
 .Rproj.user
