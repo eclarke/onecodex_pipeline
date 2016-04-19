@@ -21,7 +21,7 @@ aggregate_taxonomy <- function(ocx_files) {
 if (exists("snakemake")) {
   samples <- aggregate_sample_counts(snakemake@input[[1]])
   taxa <- aggregate_taxonomy(snakemake@input[[1]])
-  write.table(samples, file=snakemake@output[['all_samples']], quote = FALSE, row.names = FALSE)
-  write.table(taxa, file=snakemake@output[['all_taxa']], quote = FALSE, row.names = FALSE)
+  write.table(samples, file=snakemake@output[['all_samples']], quote = FALSE, row.names = FALSE, sep = "\t")
+  write.table(taxa, file=snakemake@output[['all_taxa']], quote = FALSE, row.names = FALSE, sep="\t")
 }
 

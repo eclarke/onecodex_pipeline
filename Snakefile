@@ -1,4 +1,5 @@
 from pprint import pprint
+import csv
 import glob
 
 from snakemake.utils import R
@@ -13,11 +14,17 @@ config_default = {
     'api_key': os.environ.get("ONE_CODEX_API_KEY")
 }
 
-config_default['samples'] = glob.glob(config_default['data_fp'] + "*.fastq")
+config_default['samples'] = [
+    os.path.basename(s)
+    for s in glob.glob(config_default['data_fp'] + "*.fastq")
+]
+
+print(config_default['samples'])
 
 update_config(config_default, config)
 config = config_default
 
+# Dynamically generate targets based on samples
 all_targets = [
     config['output_fp'] + os.path.basename(s) + ".taxa.tsv"
     for s in config['samples']
@@ -25,7 +32,9 @@ all_targets = [
 
 rule all:
     input:
-        all_targets
+        all_samples = config['output_fp'] + "all_samples.tsv",
+        all_taxa = config['output_fp'] + "all_taxa.tsv",
+        sample_info = config['output_fp'] + "sample_summary.tsv"
 
 rule get_taxa:
     input:
@@ -35,7 +44,25 @@ rule get_taxa:
     run:
         ocx.get_taxa_in_sample(os.path.basename(input[0]), config['output_fp'], config['api_key'])
 
-rule merge_sample_taxa:
+rule get_sample_info:
+    input:
+        expand(config['data_fp'] + "{sample}", sample=config['samples'])
+    output:
+        config['output_fp'] + "sample_summary.tsv"
+    run:
+        with open(output[0], 'w') as out:
+            writer = csv.DictWriter(
+                out,
+                ['sample_filename','reference_id','n_reads','p_mapped'],
+                extrasaction='ignore')
+            writer.writeheader()
+            for s in input:
+                s = os.path.basename(s)
+                writer.writerows(
+                    ocx.get_ocx_analysis_for_sample(s, config['api_key']))
+                
+        
+rule aggregate_taxa:
     input:
         all_targets
     output:
@@ -43,3 +70,5 @@ rule merge_sample_taxa:
         all_taxa = config['output_fp'] + "all_taxa.tsv"
     script:
         "aggregate_samples.R"
+
+

@@ -4,6 +4,7 @@ import time
 import pprint
 import itertools
 import functools
+import subprocess
 import csv
 
 from urllib.error import HTTPError
@@ -12,7 +13,8 @@ from enum import Enum
 import requests
 from Bio import Entrez
 
-Entrez.email = "<REPLACE_ME>"
+## Replace this!
+Entrez.email = subprocess.getoutput("git config --get user.email")
 
 OCX_API = "https://app.onecodex.com/api/v0/"
 
@@ -63,6 +65,11 @@ def get_analyses_for_sample(sample_name, api_key):
     return get_analyses_for_id(sample_id, api_key)
 
 
+def get_ocx_analysis_for_sample(sample_name, api_key):
+    return [_ for _ in get_analyses_for_sample(sample_name, api_key)
+     if _['reference_name'] == 'One Codex Database']
+        
+
 def get_raw_ocx_analysis_for_sample(sample_name, out_fp, api_key):
     """Download the raw analysis file for a sample."""
     analyses = get_analyses_for_sample(sample_name, api_key)
@@ -80,7 +87,7 @@ def get_raw_ocx_analysis_for_sample(sample_name, out_fp, api_key):
             return out_filename
 
         
-def get_ocx_analysis_for_sample(sample_name, api_key):
+def get_ocx_analysis_table_for_sample(sample_name, api_key):
     """Get the table-form results for a sample (warning: can be large)."""
     analyses = get_analyses_for_sample(sample_name, api_key)
     for analysis in analyses:
@@ -92,7 +99,7 @@ def get_ocx_analysis_for_sample(sample_name, api_key):
         
 def get_taxa_in_sample(sample_name, out_fp, api_key):
     """Write table with reads and full tax. info for a sample."""
-    taxa = get_ocx_analysis_for_sample(sample_name, api_key)
+    taxa = get_ocx_analysis_table_for_sample(sample_name, api_key)
     tax_ids = [_['tax_id'] for _ in taxa]
     # Post list to NCBI
     tax_info = list(itertools.chain.from_iterable(_ncbi_get_many_taxa(tax_ids)))
