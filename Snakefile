@@ -8,21 +8,11 @@ import onecodex_api as ocx
 
 configfile: "snakemake_config.yaml"
 
-config_default = {
-    'data_fp': 'data_files/paired/',
-    'output_fp': 'data_files/one_codex/',
-    'api_key': os.environ.get("ONE_CODEX_API_KEY")
-}
-
-config_default['samples'] = [
+# Identify all samples based on data_fp config option
+config['samples'] = [
     os.path.basename(s)
-    for s in glob.glob(config_default['data_fp'] + "*.fastq")
+    for s in glob.glob(config['data_fp'] + "*.fastq")
 ]
-
-print(config_default['samples'])
-
-update_config(config_default, config)
-config = config_default
 
 # Dynamically generate targets based on samples
 all_targets = [
@@ -30,11 +20,13 @@ all_targets = [
     for s in config['samples']
 ]
 
+
 rule all:
     input:
         all_samples = config['output_fp'] + "all_samples.tsv",
         all_taxa = config['output_fp'] + "all_taxa.tsv",
         sample_info = config['output_fp'] + "sample_summary.tsv"
+
 
 rule get_taxa:
     input:
@@ -44,6 +36,7 @@ rule get_taxa:
     run:
         ocx.get_taxa_in_sample(os.path.basename(input[0]), config['output_fp'], config['api_key'])
 
+        
 rule get_sample_info:
     input:
         expand(config['data_fp'] + "{sample}", sample=config['samples'])
@@ -62,8 +55,8 @@ rule get_sample_info:
                 s = os.path.basename(s)
                 writer.writerows(
                     ocx.get_ocx_analysis_for_sample(s, config['api_key']))
+
                 
-        
 rule aggregate_taxa:
     input:
         all_targets
