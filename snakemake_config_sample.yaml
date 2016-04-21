@@ -1,0 +1,6 @@
+data_fp:
+  data_files/paired/
+output_fp:
+  data_files/one_codex/
+api_key:
+  my_api_key
