@@ -54,7 +54,9 @@ rule get_sample_info:
             writer = csv.DictWriter(
                 out,
                 ['sample_filename','reference_id','n_reads','p_mapped'],
-                extrasaction='ignore')
+                extrasaction='ignore',
+                delimiter='\t'
+            )
             writer.writeheader()
             for s in input:
                 s = os.path.basename(s)
