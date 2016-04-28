@@ -13,6 +13,7 @@ expands the taxonomy of all the taxa from NCBI and writes summaries.
 - Python 3.5+
     - Requests
     - BioPython
+    - PyYAML
     - Snakemake
 - One Codex API key stored in an environmental variable called `$ONE_CODEX_API_KEY` or in
 `snakemake_config.yaml` under the key "api_key".
