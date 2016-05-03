@@ -14,19 +14,14 @@ import requests
 from Bio import Entrez
 
 ## Replace this!
-Entrez.email = subprocess.getoutput("git config --get user.email")
+try:
+    Entrez.email = subprocess.getoutput("git config --get user.email")
+except subprocess.CalledProcessError:
+    pass
 
 OCX_API = "https://app.onecodex.com/api/v0/"
 
-TaxRanks = [
-    'superkingdom',
-    'phylum',
-    'class',
-    'order',
-    'family',
-    'genus',
-    'species'
-] 
+TaxRanks = [l.strip('\n') for l in open('taxonomic_ranks.txt')]
 
 def _get_ocx_url(url, api_key):
     r = requests.get(url, auth=(api_key, ''))
