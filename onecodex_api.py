@@ -27,7 +27,6 @@ OCX_API = "https://app.onecodex.com/api/v0/"
 Taxonomy = yaml.load(open('taxa.yaml'))
 TaxRanks = Taxonomy['Ranks']
 Baltimore = Taxonomy['Baltimore']
-print(Baltimore)
 
 
 def get_baltimore_group(LineageEx):
