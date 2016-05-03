@@ -6,12 +6,15 @@ import itertools
 import functools
 import subprocess
 import csv
+import yaml
 
 from urllib.error import HTTPError
 from enum import Enum
 
 import requests
 from Bio import Entrez
+
+
 
 ## Replace this!
 try:
@@ -21,7 +24,17 @@ except subprocess.CalledProcessError:
 
 OCX_API = "https://app.onecodex.com/api/v0/"
 
-TaxRanks = [l.strip('\n') for l in open('taxonomic_ranks.txt')]
+Taxonomy = yaml.load(open('taxa.yaml'))
+TaxRanks = Taxonomy['Ranks']
+Baltimore = Taxonomy['Baltimore']
+print(Baltimore)
+
+
+def get_baltimore_group(LineageEx):
+    for r in LineageEx:
+        if r['Rank'] == 'no rank' and r['ScientificName'] in Baltimore:
+            return r['ScientificName']
+
 
 def _get_ocx_url(url, api_key):
     r = requests.get(url, auth=(api_key, ''))
@@ -98,11 +111,17 @@ def get_taxa_in_sample(sample_name, out_fp, api_key):
     tax_ids = [_['tax_id'] for _ in taxa]
     # Post list to NCBI
     tax_info = list(itertools.chain.from_iterable(_ncbi_get_many_taxa(tax_ids)))
-    tax_info = [
-        {r['Rank']: r['ScientificName'] for r in t.get('LineageEx', ())}
-        for t in tax_info
-    ]
-    assert(len(tax_info) == len(taxa))
+    lineages = []
+    for t in tax_info:
+        LineageEx = t.get('LineageEx', ())
+        _lineage = {r['Rank']: r['ScientificName'] for r in LineageEx}
+        _lineage['baltimore'] = get_baltimore_group(LineageEx)
+        lineages.append(_lineage)
+    # tax_info = [
+    #     {r['Rank']: r['ScientificName'] for r in t.get('LineageEx', ())}
+    #     for t in tax_info
+    # ]
+    assert(len(lineages) == len(taxa))
     out_filename = os.path.join(out_fp, sample_name + ".taxa.tsv")
     with open(out_filename, 'w') as out:
         writer = csv.DictWriter(
@@ -114,7 +133,7 @@ def get_taxa_in_sample(sample_name, out_fp, api_key):
             restval='NA'
         )
         writer.writeheader()
-        rows = ({**x, **y} for x, y in zip(taxa, tax_info))
+        rows = ({**x, **y} for x, y in zip(taxa, lineages))
         writer.writerows(rows)
     return out_filename
 
